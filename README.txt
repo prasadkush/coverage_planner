@@ -1,6 +1,3 @@
-// Code written by Kush Prasad //
-// email: prasad.kush@gmail.com //
-
 Instructions for building and running the package, taking input, visualization in rviz and 
 a brief description of the code files.
 
