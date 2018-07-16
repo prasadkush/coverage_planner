@@ -68,6 +68,8 @@ private:
 
 	void iterate_over_adjacent_nodes(bool& edge_added, disc_point& adj, disc_point& current);
 
+	void iterate_over_adjacent_nodes_(bool& edge_added, disc_point& adj, disc_point& current);
+
 	bool within_bounds(disc_point p, int x_cells, int y_cells);
 
 	bool within_obstacle(double, double, const environment& e);
@@ -79,6 +81,8 @@ private:
 	void make_graph(environment& e, discr_environment& d);
 
 	bool add_node(disc_point adj, disc_point current, const environment& e, discr_environment& d);
+
+	void shortest_path(disc_point s, disc_point g, vector<geometry_msgs::Point>& plan_, discr_environment& d);
 
 	void output_plan(const vector<geometry_msgs::Point>&);
 

@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <iostream>
+#include <queue>
 #include <coverage_planner/coverage_planner.h>
 #include <tf/transform_broadcaster.h>
 
@@ -360,9 +361,20 @@ void coverage_planner::make_graph(environment& e, discr_environment& d)
 			if (!within_obstacle(x,y,e))
 			{
 				node n;
-				disc_point p(i,j);
+				vector<disc_point> neighbors;
+				disc_point p(i,j), adj;
 				n.p = p;
 				n.nodereached = false;
+				for (int k = 0; k < motions.size(); k++)
+				{
+					adj = compute_adjacent(p, motions[k]);
+					discrete_to_continuous(adj.x,adj.y,x,y,e);
+					if (within_bounds(adj,d.x_cells,d.y_cells) && !within_obstacle(x,y,e))
+					{
+						neighbors.push_back(adj);
+					}
+				}
+				n.neighbors = neighbors;
 				d.pointset.insert(p);
 				d.graphnodes[p] = n;
 			}			
@@ -422,6 +434,60 @@ bool coverage_planner::within_bounds(disc_point p, int x_cells, int y_cells)
 	return (p.x >= 0 && p.x <= x_cells) && (p.y >= 0 && p.y <= y_cells);
 }
 
+
+void coverage_planner::shortest_path(disc_point s, disc_point g, vector<geometry_msgs::Point>& plan_, discr_environment& d)
+{
+	map<disc_point,node>::iterator it;
+	queue<disc_point> q;
+	disc_point current;
+	double x, y;
+	geometry_msgs::Point p;
+	p.z = 0.0;
+	for (it = d.graphnodes.begin(); it != d.graphnodes.end(); it++)
+	{
+		it->second.inqueue = false;
+	}
+	q.push(s);
+	d.graphnodes[s].inqueue = true;
+	current = s;
+	while (!q.empty() && current != g)
+	{
+		vector<disc_point> neigh;
+		neigh = d.graphnodes[current].neighbors;
+		for (int i = 0; i < neigh.size(); i++)
+		{
+			if (!d.graphnodes[neigh[i]].inqueue)
+			{	q.push(neigh[i]);
+				d.graphnodes[neigh[i]].inqueue = true;
+				d.graphnodes[neigh[i]].qparent = current;
+			}
+		}
+		q.pop();
+		current.x = q.front().x;
+		current.y = q.front().y;
+	}
+	vector<geometry_msgs::Point> temp_plan;
+	if (current == g && s != g)
+	{
+		while (current != s)
+		{
+			discrete_to_continuous(current.x,current.y,x,y,env);
+			p.x = x;
+			p.y = y;
+			temp_plan.push_back(p);
+			current = d.graphnodes[current].qparent;
+		}
+		if (temp_plan.size() > 0)
+		{
+			for (int i = temp_plan.size() - 1; i >= 0; i--)
+			{	
+				plan_.push_back(temp_plan[i]);
+			}
+		}	
+	}
+
+}
+
 bool coverage_planner::add_node(disc_point adj, disc_point current, const environment& e, discr_environment& d)
 {
 	double x,y;
@@ -434,6 +500,25 @@ bool coverage_planner::add_node(disc_point adj, disc_point current, const enviro
 		return true;
 	}
 	return false;
+}
+
+void coverage_planner::iterate_over_adjacent_nodes_(bool& edge_added, disc_point& adj, disc_point& current)
+{
+	double x, y;
+	for (int i = 0; i < motions.size(); i++)
+	{
+		if (!edge_added)
+		{
+			adj = compute_adjacent(current,motions[i]);
+			discrete_to_continuous(adj.x,adj.y,x,y,env);
+			if (within_bounds(adj,envd.x_cells,envd.y_cells) && !within_obstacle(x,y,env) && envd.graphnodes[adj].nodereached == 0)
+			{ edge_added = true; }
+		}
+		if (edge_added)
+		{
+			break;
+		}
+	}
 }
 
 void coverage_planner::iterate_over_adjacent_nodes(bool& edge_added, disc_point& adj, disc_point& current)
@@ -458,6 +543,7 @@ void coverage_planner::compute_plan()
 	vertex v;
 	disc_point source, current, adj;
 	geometry_msgs::Point p;
+	int no_of_jumps = 0;
 	p.z = 0.0;
 	double x, y;
 	set<disc_point>::iterator it;
@@ -490,14 +576,18 @@ void coverage_planner::compute_plan()
 			}
 			else
 			{
+				disc_point start;
+				start = current;
 				while(!edge_added && current != source)     // this loop entered when no obstacle free adjacent node is ...
 				{											// ... present. we then go back to a node in the path from which ...
 					current = envd.graphnodes[current].parent;   // ... a valid adjacent node is reachable 
-					iterate_over_adjacent_nodes(edge_added,adj,current);
+					iterate_over_adjacent_nodes_(edge_added,adj,current);
 					if (edge_added)
 					{
-						discrete_to_continuous(adj.x,adj.y,p.x,p.y,env);
+						shortest_path(start,current,plan,envd);
+						discrete_to_continuous(current.x,current.y,p.x,p.y,env);
 						plan.push_back(p);
+						no_of_jumps += 1;
 					}
 				}
 			}
@@ -508,6 +598,8 @@ void coverage_planner::compute_plan()
 	output_plan(plan);
 	cout<<"\nsolution found\n";
 	cout<<"plan size: "<<plan.size()<<"\n";
+	cout<<"jumps: "<<no_of_jumps<<"\n";
+	//cout<<"used shortest_path\n";
 
 }
 

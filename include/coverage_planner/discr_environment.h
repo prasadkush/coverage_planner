@@ -38,6 +38,9 @@ bool disc_point::operator != (const disc_point& d) const
 struct node{            // data type for storing node attributes, i.e. discrete point, parent, child and flag
 	disc_point p;
 	disc_point parent, child;
+	vector<disc_point> neighbors;
+	disc_point qparent;
+	bool inqueue; 
 	bool nodereached;
 	node();
 };
