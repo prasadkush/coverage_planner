@@ -26,6 +26,24 @@ struct polygon     // polygon represented as a vector of x, y values
 	vector<vertex> vertices;
 };
 
+struct stop_point
+{
+	double stop_point_x;
+	stop_point();
+	void stop_point_buf();
+};
+
+stop_point::stop_point()
+{
+	stop_point_x = 0;
+}
+
+void stop_point::stop_point_buf()
+{	
+	//TODO Write initialisation
+	
+}
+
 struct environment
 {
 	polygon pboundary;   // pboundary stores the input polygon 

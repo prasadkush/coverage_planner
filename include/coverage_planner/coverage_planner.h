@@ -24,9 +24,17 @@ public:
 
 	ros::Subscriber sub_polygon;
 
+	ros::Subscriber sub_stop_input;
+
+	ros::Subscriber sub_no_obstacle;
+
 	//ros::Publisher marker_pub, marker_pub_obs;
 
 	environment env;
+	
+	bool global_stop_x;
+
+	void stop_input();
 
 	discr_environment envd;
 
@@ -43,6 +51,12 @@ public:
 	void compute_plan();   // function which does all the plan computation
 
 	boost::thread* th_input;
+	
+	void stop_input_callback(const geometry_msgs::Point& msg); 
+
+	void no_obstacles_callback(const geometry_msgs::Point& msg);
+
+	int global_no_obstacles;
 
 	//boost::thread th_exit;
 
@@ -51,7 +65,7 @@ private:
 	void vertices_callback(const geometry_msgs::PoseWithCovarianceStamped& msg);
 
 	void input_polygon();	// input thread function
-
+	
 	void define_motions();
 
 	void continuous_to_discrete(double x, double y, int& x_dis, int& y_dis, const environment& e);

@@ -37,9 +37,10 @@ coverage_planner::coverage_planner(ros::NodeHandle& nh) : vis(nh)
 	define_motions();    
 
 	sub_polygon = n.subscribe("/initialpose", 1, &coverage_planner::vertices_callback, this);
-	
-	th_input = new boost::thread(&coverage_planner::input_polygon, this);
+	sub_stop_input = n.subscribe("/stop_input", 1, &coverage_planner::stop_input_callback, this);
+	sub_no_obstacle = n.subscribe("/number/obstacles", 1, &coverage_planner::no_obstacles_callback, this);
 
+	th_input = new boost::thread(&coverage_planner::input_polygon, this);
 }
 
 coverage_planner::~coverage_planner()
@@ -48,6 +49,43 @@ coverage_planner::~coverage_planner()
 	delete th_input;
 }
 
+void coverage_planner::no_obstacles_callback(const geometry_msgs::Point& msg)
+{	 
+	cout << "\nThis is a number of obstacles: "<< msg.x << "\n";
+
+	global_no_obstacles = msg.x;
+	return;
+}
+
+void coverage_planner::stop_input_callback(const geometry_msgs::Point& msg)
+{	 
+	//bool global_stop_x = true;
+	double stop_x = 0;
+	double stop_y = 0;
+	if (stop_x > stop_y)
+	{
+		stop_x = msg.x;
+		cout << "\nStop input function: " << (msg.x) << "\n";
+		cout << "\nStop_x =" << stop_x << "\n";
+		//cout << "Global in fun in oper if: " << global_stop_x << "\n";
+	}	
+	else
+	{
+		global_stop_x = false;
+		//cout << "Global in fun in oper else: " << global_stop_x << "\n";
+		return;
+	}
+		
+}
+
+void coverage_planner::stop_input()
+{	 
+	while (global_stop_x == true)
+		{
+			//Empty 
+		}	
+	//Empty
+}
 
 void coverage_planner::define_motions()
 {
@@ -117,10 +155,13 @@ void coverage_planner::vertices_callback(const geometry_msgs::PoseWithCovariance
 void coverage_planner::input_polygon()
 {
 	ros::Rate r(30);
-	int n;
+	int input;
 	cout<<"\nPlease enter the polygon as vertice points on rviz using 2D Pose Estimate button.\n";
 	cout<<"The orientation does not matter. After done, please enter a digit.\n";
-	cin>>n;
+	//cin>>input;
+	global_stop_x = true;
+	stop_input();
+	cout << "\nThis a global number of obstacles: " << global_no_obstacles << "\n";
 	vertices_done = 1;
 	no_obstacles = 0;
 	r.sleep();
@@ -134,7 +175,12 @@ void coverage_planner::input_polygon()
 	if (polygonvalid == true)
 	{
 		cout<<"\nPlease enter number of obstacles to be entered\n";
-		cin>>no_obstacles;
+		//function input number_of_obstacles
+		global_stop_x = true;
+		stop_input();
+		no_obstacles = global_no_obstacles;
+		//---------
+		//cin>>no_obstacles;
 		cout<<"no of obstacles: "<<no_obstacles<<"\n";
 		if (no_obstacles < 0)
 		{
@@ -148,7 +194,8 @@ void coverage_planner::input_polygon()
 		for (int i = 0; i < no_obstacles; i++)
 		{
 			cout<<"\nPlease click polygon obstacle points on rviz using 2D Pose Estimate button and then enter a digit.\n";
-			cin>>n;
+			global_stop_x = true;
+			stop_input();
 			count_obstacles += 1;
 		}
 		cout<<"Note: only convex and polygon obstacles will be considered.\n";
