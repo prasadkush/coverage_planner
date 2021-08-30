@@ -1,5 +1,8 @@
 // Code written by Kush Prasad //
 // email: prasad.kush@gmail.com //
+#include <iostream>
+#include <fstream>
+
 
 #include <ros/ros.h>
 #include <iostream>
@@ -14,12 +17,9 @@ The input environment is checked wether it is valid (convex polygon). If not, th
 The above is done in input_polygon() function which is called as a thread from the constructor.
 For a valid environment, environment variables (resolution, bounds) are initialized
 The coverage plan is then computed by a call to the compute_plan() function from the input_polygon() function
-
 Assumptions:
-
 1) The environment is bounded by a convex polygon and contains obstacles as convex polygons
 2) The robot only executes the motions up, left, down and right.
-
 */
 
 coverage_planner::coverage_planner(ros::NodeHandle& nh) : vis(nh)
@@ -652,15 +652,21 @@ void coverage_planner::compute_plan()
 
 void coverage_planner::output_plan(const vector<geometry_msgs::Point>& plan)
 {
+	disc_point int_plan;
+
+	std::ofstream out; 
+	out.open("/home/valeriia/UAV_Swarm_gazebo/catkin_ws/src/coverage_planner/scripts/path_cpp.txt"); 
+	if (out.is_open())
 	for (int i = 0; i < plan.size(); i++)
 	{
-		cout<<i+1<<". x: "<<plan[i].x<<"  y: "<<plan[i].y<<"\n";
+		int_plan.x = int(plan[i].x); 
+		int_plan.y= int(plan[i].y);
+		//out <<int_plan.x << " " << int_plan.y << std::endl;
+		//out <<plan[i].x << " " << plan[i].y << std::endl;
+		out <<int(plan[i].x)  << " " << int(plan[i].y) << std::endl;
+		cout<<i+1<<". x: "<< plan[i].x<<"  y: "<<plan[i].y<<"\n";
 	}
 }
-
-
-
-
 
 /*
 int main(int argc, char** argv)

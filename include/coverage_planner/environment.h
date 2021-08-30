@@ -84,7 +84,7 @@ void environment::compute_env_bounds()   // computes min and mx x,y, values from
 void environment::compute_resolution()
 {
 	resolution = (min(abs(xmin - xmax), abs(ymin - ymax)))/10;
-	resolution = 0.25;
+	resolution = 600;
 }
 
 void environment::output_parameters()
