@@ -15,7 +15,8 @@ with open("path_cpp.txt", "r") as ins:
   path_global_2 = []
   for line in ins:
     path_global_2.append([float(line) for line in line.split()])
-pp = path_global_2[::-1]  
+    
+#pp = path_global_2[::-1]  
 
 
 with open("path_rrt_reset_test.txt", "r") as ins:
@@ -28,7 +29,7 @@ with open("path_rrt_land_test.txt", "r") as ins:
   for line in ins:
     path_global_4.append([float(line) for line in line.split()])
 
-path_global_1.extend(pp)
+path_global_1.extend(path_global_2)
 path_global_1.extend(path_global_3)
 path_global_1.extend(path_global_4)
 
